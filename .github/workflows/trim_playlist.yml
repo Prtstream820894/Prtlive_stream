@@ -1,0 +1,88 @@
+name: Trim External Playlist Every 30 Minutes
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Har 30 minute mein chalega
+  workflow_dispatch: # Manual run karne ke liye button
+
+jobs:
+  update-playlist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Process and Save Playlist
+        run: |
+          python -c "
+          import urllib.request
+
+          # Aapki di gayi original link jahan se data fetch karna hai
+          url = 'https://raw.githubusercontent.com/Prtstream820894/Prmovies/refs/heads/main/playlist.m3u'
+          
+          req = urllib.request.urlopen(url)
+          content = req.read().decode('utf-8')
+          lines = content.splitlines()
+
+          new_lines = []
+          group_counts = {}
+          header_line = ''
+          
+          if lines and lines[0].startswith('#EXTM3U'):
+              header_line = lines[0]
+              lines = lines[1:]
+
+          i = 0
+          while i < len(lines):
+              line = lines[i]
+              
+              if line.startswith('#EXTINF:'):
+                  group_name = 'Default'
+                  if 'group-title=\"' in line:
+                      try:
+                          part = line.split('group-title=\"')[1]
+                          group_name = part.split('\"')[0]
+                      except IndexError:
+                          pass
+                  
+                  current_group = group_name
+                  
+                  if current_group not in group_counts:
+                      group_counts[current_group] = 0
+                  
+                  group_counts[current_group] += 1
+                  
+                  # Har group ke sirf pehle 5 channels rakhenge, baki remove
+                  if group_counts[current_group] > 5:
+                      i += 2
+                      continue
+                  else:
+                      new_lines.append(line)
+                      if i + 1 < len(lines) and not lines[i+1].startswith('#'):
+                          new_lines.append(lines[i+1])
+                          i += 1
+              i += 1
+
+          final_output = []
+          if header_line:
+              final_output.append(header_line)
+          final_output.extend(new_lines)
+
+          # Aapki nayi repo me 'playlist.m3u' ke naam se save ho jayega
+          with open('playlist.m3u', 'w', encoding='utf-8') as f:
+              f.write('\n'.join(final_output) + '\n')
+          "
+
+      - name: Commit and Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add playlist.m3u
+          git diff --quiet && git diff --staged --quiet || (git commit -m 'Auto-trim playlist: max 5 channels per group' && git push)
