@@ -1,4 +1,4 @@
-Name: Trim External Playlist Every 30 Minutes
+name: Trim External Playlist Every 30 Minutes
 
 on:
   schedule:
