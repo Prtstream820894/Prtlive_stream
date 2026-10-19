@@ -26,7 +26,7 @@ jobs:
           urls = [
               "https://raw.githubusercontent.com/Prtstream820894/Prmovies/refs/heads/main/playlist.m3u",
               "https://raw.githubusercontent.com/Prtstream820894/Bazeradult/refs/heads/main/playlist.m3u",
-              "https://raw.githubusercontent.com/poonamchouhan828/xnxx/refs/heads/main/playlist.m3u"
+              
           ]
 
           lines = []
