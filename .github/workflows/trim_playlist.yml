@@ -26,19 +26,22 @@ jobs:
           urls = [
               "https://raw.githubusercontent.com/Prtstream820894/Prmovies/refs/heads/main/playlist.m3u",
               "https://raw.githubusercontent.com/Prtstream820894/Bazeradult/refs/heads/main/playlist.m3u",
-              
+              "https://raw.githubusercontent.com/PRTSTREAM/Fly-final-/refs/heads/main/playlist.m3u",
           ]
 
           lines = []
 
           for url in urls:
-              content = urllib.request.urlopen(url).read().decode("utf-8", errors="ignore")
-              playlist_lines = content.splitlines()
+              try:
+                  content = urllib.request.urlopen(url).read().decode("utf-8", errors="ignore")
+                  playlist_lines = content.splitlines()
 
-              if playlist_lines and playlist_lines[0].startswith("#EXTM3U"):
-                  playlist_lines = playlist_lines[1:]
+                  if playlist_lines and playlist_lines[0].startswith("#EXTM3U"):
+                      playlist_lines = playlist_lines[1:]
 
-              lines.extend(playlist_lines)
+                  lines.extend(playlist_lines)
+              except Exception as e:
+                  print(f"Error fetching {url}: {e}")
 
           new_lines = []
           group_counts = {}
@@ -82,6 +85,6 @@ jobs:
           git add playlist.m3u
 
           if ! git diff --cached --quiet; then
-            git commit -m "Auto-trim playlist"
+            git commit -m "Auto-trim playlist with new Fly-final source"
             git push
           fi
